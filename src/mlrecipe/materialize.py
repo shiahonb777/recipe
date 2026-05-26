@@ -115,7 +115,12 @@ def _apply_lora_to_tensor(
         delta = (B @ A).T  to match base shape.
     """
     scaling = alpha / rank
-    delta = lora_b.astype(np.float32) @ lora_a.astype(np.float32)
+    # NumPy 2.x emits spurious "divide by zero / overflow / invalid"
+    # RuntimeWarnings from matmul on certain BLAS paths even when the
+    # inputs and outputs are perfectly finite. Suppress them locally;
+    # we re-check for NaN/Inf below as defense in depth.
+    with np.errstate(divide="ignore", over="ignore", invalid="ignore"):
+        delta = lora_b.astype(np.float32) @ lora_a.astype(np.float32)
     if fan_in_fan_out:
         delta = delta.T
     delta = scaling * delta
@@ -124,7 +129,13 @@ def _apply_lora_to_tensor(
             f"LoRA delta shape {delta.shape} != base shape {base_w.shape} "
             f"(fan_in_fan_out={fan_in_fan_out})"
         )
-    return (base_w.astype(np.float32) + delta).astype(base_w.dtype)
+    out = (base_w.astype(np.float32) + delta).astype(base_w.dtype)
+    if not np.isfinite(out).all():
+        raise ValueError(
+            "non-finite values in merged tensor; LoRA application produced "
+            "NaN or Inf (check rank/alpha and adapter dtype)"
+        )
+    return out
 
 
 def _match_lora_targets(

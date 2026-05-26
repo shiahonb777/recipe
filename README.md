@@ -48,7 +48,7 @@ There's a working end-to-end demo in
 [`examples/gpt2_alpaca/`](examples/gpt2_alpaca/) that:
 
 - Downloads a real PEFT LoRA from HF Hub (`monsterapi/gpt2_alpaca-lora`)
-- Packages it as an `mlrecipe` (1.2 MB instead of 500 MB)
+- Packages it as an `mlrecipe` (1.1 MB instead of 500 MB)
 - Materializes it into a merged GPT-2 checkpoint
 - Verifies the result is **bit-identical** to PEFT's official
   `merge_and_unload` (148/148 tensors, max abs diff = 0.0)
@@ -56,6 +56,18 @@ There's a working end-to-end demo in
 ```bash
 bash examples/gpt2_alpaca/run.sh
 ```
+
+A live, distributable copy is at
+[`shiahonb777/gpt2-alpaca-recipe@v1`](https://github.com/shiahonb777/gpt2-alpaca-recipe/releases/tag/v1).
+You can clone and materialize it from any machine:
+
+```bash
+mlrecipe clone shiahonb777/gpt2-alpaca-recipe@v1
+cd gpt2-alpaca-recipe
+mlrecipe materialize ./merged
+```
+
+The recipe is **1.1 MB**. The merged checkpoint is **~500 MB**.
 
 ## Install
 
