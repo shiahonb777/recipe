@@ -13,8 +13,8 @@ from pathlib import Path
 
 import pytest
 
-from recipe import load_recipe
-from recipe.cli import main
+from mlrecipe import load_recipe
+from mlrecipe.cli import main
 
 
 def _run(monkeypatch, tmp_path, argv):

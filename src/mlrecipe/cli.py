@@ -22,12 +22,12 @@ import os
 import sys
 from pathlib import Path
 
-from recipe import (
+from mlrecipe import (
     Recipe,
     load_recipe,
     save_recipe,
 )
-from recipe.recipe import (
+from mlrecipe.recipe import (
     Adapter,
     BaseRef,
     TrainingMetadata,
@@ -164,7 +164,7 @@ def cmd_show(args: argparse.Namespace) -> int:
 
 
 def cmd_materialize(args: argparse.Namespace) -> int:
-    from recipe.materialize import materialize
+    from mlrecipe.materialize import materialize
     if args.repo:
         repo_dir = Path(args.repo)
     else:

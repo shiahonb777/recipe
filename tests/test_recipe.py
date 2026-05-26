@@ -9,8 +9,8 @@ from pathlib import Path
 
 import pytest
 
-from recipe import load_recipe, save_recipe
-from recipe.recipe import (
+from mlrecipe import load_recipe, save_recipe
+from mlrecipe.recipe import (
     Adapter,
     BaseRef,
     Recipe,

@@ -13,8 +13,8 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from recipe.recipe import Adapter
-from recipe.materialize import (
+from mlrecipe.recipe import Adapter
+from mlrecipe.materialize import (
     _apply_lora_to_tensor,
     _match_lora_targets,
     apply_lora_adapter,

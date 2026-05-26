@@ -3,13 +3,13 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "recipe"
+name = "mlrecipe"
 version = "0.1.0"
 description = "Ship model recipes, not weights. ~1000x smaller fine-tune distribution."
 readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "MIT" }
-authors = [{ name = "recipe contributors" }]
+authors = [{ name = "mlrecipe contributors" }]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
@@ -37,14 +37,14 @@ test = [
 ]
 
 [project.scripts]
-recipe = "recipe.cli:main"
+recipe = "mlrecipe.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/shiahonb777/recipe"
-Issues = "https://github.com/shiahonb777/recipe/issues"
+Homepage = "https://github.com/shiahonb777/mlrecipe"
+Issues = "https://github.com/shiahonb777/mlrecipe/issues"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/recipe"]
+packages = ["src/mlrecipe"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

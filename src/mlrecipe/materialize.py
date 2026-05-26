@@ -25,7 +25,7 @@ from typing import Optional
 
 import numpy as np
 
-from recipe.recipe import Adapter, Recipe, artifact_path
+from mlrecipe.recipe import Adapter, Recipe, artifact_path
 
 
 # ---------- Base model resolution ----------

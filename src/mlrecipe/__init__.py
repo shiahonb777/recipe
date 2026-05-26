@@ -15,8 +15,8 @@ Public API:
 
 from __future__ import annotations
 
-from recipe.recipe import Recipe, load_recipe, save_recipe
-from recipe.materialize import materialize
+from mlrecipe.recipe import Recipe, load_recipe, save_recipe
+from mlrecipe.materialize import materialize
 
 __version__ = "0.1.0"
 __all__ = ["Recipe", "load_recipe", "save_recipe", "materialize", "__version__"]

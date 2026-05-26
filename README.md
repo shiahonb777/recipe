@@ -44,16 +44,25 @@ tensor-aware delta.)
 
 ## Install
 
+> Note: Not yet published to PyPI. The install command below will work
+> once 0.1.0 is released. Until then, install from source.
+
 ```bash
-# Not yet on PyPI. Install from source:
-git clone https://github.com/shiahonb777/recipe
-cd recipe
+# From PyPI (planned):
+pip install mlrecipe
+
+# From source (today):
+git clone https://github.com/shiahonb777/mlrecipe
+cd mlrecipe
 pip install -e .
 ```
 
-The PyPI name is still being chosen (`recipe` is taken by an unrelated
-SQL DSL). When 0.1.0 is published, the install command will reflect
-the chosen name in this README.
+The CLI is called `recipe`. (The PyPI package is `mlrecipe` because the
+shorter name is taken; the CLI is the user-facing brand.)
+
+```bash
+recipe --help
+```
 
 Requires Python 3.9+. The optional `[torch]` extra enables a future
 torch-native fast path; the default pure-NumPy path is what runs today.
