@@ -59,21 +59,11 @@ bash examples/gpt2_alpaca/run.sh
 
 ## Install
 
-> Note: Not yet published to PyPI. The install command below will work
-> once 0.1.0 is released. Until then, install from source.
-
 ```bash
-# From PyPI (planned):
-pip install mlrecipe
-
-# From source (today):
-git clone https://github.com/shiahonb777/mlrecipe
-cd mlrecipe
-pip install -e .
+pip install git+https://github.com/shiahonb777/mlrecipe.git
 ```
 
-The CLI is called `recipe`. (The PyPI package is `mlrecipe` because the
-shorter name is taken; the CLI is the user-facing brand.)
+Verify:
 
 ```bash
 mlrecipe --help
