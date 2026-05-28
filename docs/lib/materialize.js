@@ -14,9 +14,9 @@
 //   // result.base_sha256        : sha256 hex of input base bytes
 //   // result.merged_sha256      : sha256 hex of output bytes
 
-import { extractTarGz } from "./targz.js";
-import { readSafetensors, tensorAsF32, f32ToBuffer, writeSafetensors, DTYPES } from "./safetensors.js";
-import { matchLoraTargets, applyLoRA } from "./lora.js";
+import { extractTarGz } from "./targz.js?v=2";
+import { readSafetensors, tensorAsF32, f32ToBuffer, writeSafetensors, DTYPES } from "./safetensors.js?v=2";
+import { matchLoraTargets, applyLoRA } from "./lora.js?v=2";
 
 // Minimal TOML subset needed for recipe.toml — the main app's parseTOML
 // is fine but we want this lib to be self-contained, so we duplicate
@@ -212,11 +212,16 @@ export async function materializeRecipe({ repo, tag, onProgress = () => {} }) {
     log(`try repo tree at ${branch}`);
     const tomlURL = `https://raw.githubusercontent.com/${repo}/${branch}/.recipe/recipe.toml`;
     try {
+      log(`  GET ${tomlURL}`);
       const tomlRes = await fetch(tomlURL);
+      log(`  -> HTTP ${tomlRes.status}`);
       if (!tomlRes.ok) continue;
       const tomlText = await tomlRes.text();
       const candidate = parseTOML(tomlText);
-      if (!candidate.recipe || !candidate.base) continue;
+      if (!candidate.recipe || !candidate.base) {
+        log(`  toml present but no [recipe]/[base] section, skipping`, "warn");
+        continue;
+      }
 
       // Resolve adapter from .recipe/artifacts/<aa>/<full-hash>.
       const adapter0 = (candidate.adapters || [])[0];
@@ -242,7 +247,7 @@ export async function materializeRecipe({ repo, tag, onProgress = () => {} }) {
       log(`recipe loaded from ${repo}@${branch} (.recipe tree)`);
       break;
     } catch (e) {
-      // Not on this branch; try the next.
+      log(`  branch ${branch} failed: ${e.message}`, "warn");
     }
   }
 

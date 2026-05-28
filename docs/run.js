@@ -1,5 +1,5 @@
 // Driver for run.html. Wires the materialize pipeline to the staged UI.
-import { materializeRecipe } from "./lib/materialize.js";
+import { materializeRecipe } from "./lib/materialize.js?v=2";
 
 const $ = (id) => document.getElementById(id);
 
