@@ -11,12 +11,15 @@
   :root {
     --surface:        #faf9f5;
     --surface-sunken: #f3f1ea;
+    --surface-raised: #ffffff;
     --text:        #141413;
     --text-muted:  #6b6a64;
     --text-faint:  #b0aea5;
     --border:        #e8e6dc;
     --border-strong: #c9c5b8;
     --accent:       #d97757;
+    --accent-green: #788c5d;
+    --danger: #b54545;
     --font-head: "Poppins", "Helvetica Neue", Arial, sans-serif;
     --font-body: "Lora", Georgia, "Times New Roman", serif;
     --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Monaco, monospace;
@@ -31,69 +34,294 @@
     min-height: 100vh;
     padding: 56px 24px 96px;
   }
-  .wrap { max-width: 720px; margin: 0 auto; }
+  .wrap { max-width: 880px; margin: 0 auto; }
   h1 {
     font-family: var(--font-head);
     font-weight: 600;
-    font-size: 2rem;
+    font-size: 2.25rem;
     margin: 0 0 6px;
     letter-spacing: -0.015em;
+    line-height: 1.1;
+  }
+  h2 {
+    font-family: var(--font-head);
+    font-weight: 500;
+    font-size: 1.25rem;
+    margin: 48px 0 14px;
+    letter-spacing: -0.005em;
   }
   .repo {
     font-size: 0.85rem;
     color: var(--text-muted);
-    margin-bottom: 24px;
+    margin-bottom: 22px;
   }
   .lead { font-size: 1.0625rem; line-height: 1.7; max-width: 640px; }
-  a { color: var(--text); border-bottom: 1px solid var(--border-strong); text-decoration: none; }
+  a {
+    color: var(--text);
+    border-bottom: 1px solid var(--border-strong);
+    text-decoration: none;
+    transition: border-color 0.2s;
+  }
   a.accent { color: var(--accent); border-bottom-color: rgba(217, 119, 87, 0.4); }
   a:hover, a.accent:hover { border-bottom-color: var(--accent); }
   code { font: 0.92em var(--font-mono); background: var(--surface-sunken); padding: 1px 6px; border-radius: 4px; }
   hr { border: 0; border-top: 1px solid var(--border); margin: 36px 0; }
-  .note {
-    background: var(--surface-sunken);
-    border-left: 2px solid var(--text-faint);
-    padding: 14px 16px;
-    margin: 24px 0;
-    font-size: 0.95rem;
-    line-height: 1.6;
+  .meta { color: var(--text-muted); font-size: 0.875rem; }
+  small { font-size: 0.85rem; color: var(--text-muted); }
+
+  .input-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px;
+    margin: 14px 0;
   }
+  input[type=text] {
+    background: var(--surface-raised);
+    color: var(--text);
+    border: 1px solid var(--border-strong);
+    border-radius: 6px;
+    padding: 9px 13px;
+    font: 0.92rem var(--font-mono);
+    width: 100%;
+  }
+  input[type=text]:focus { outline: none; border-color: var(--accent); }
+  button {
+    background: var(--text);
+    color: var(--surface);
+    border: 0;
+    border-radius: 6px;
+    padding: 9px 18px;
+    font: 500 0.875rem var(--font-head);
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  button:hover { background: #2d2c2a; }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  button.ghost {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border-strong);
+  }
+  button.ghost:hover { background: var(--surface-sunken); }
+
+  .examples {
+    color: var(--text-muted);
+    margin: 4px 0 14px;
+    font-size: 0.875rem;
+  }
+  .examples code {
+    cursor: pointer;
+    margin-right: 8px;
+  }
+  .examples code:hover { color: var(--accent); }
+
+  .stages {
+    margin: 24px 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .stage {
+    display: grid;
+    grid-template-columns: 24px 1fr auto;
+    gap: 16px;
+    align-items: baseline;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .stage:last-child { border-bottom: 0; }
+  .stage .marker {
+    font-family: var(--font-head);
+    font-size: 0.85rem;
+    color: var(--text-faint);
+    font-feature-settings: "lnum", "tnum";
+  }
+  .stage.done .marker { color: var(--accent-green); }
+  .stage.active .marker { color: var(--accent); }
+  .stage.failed .marker { color: var(--danger); }
+  .stage .label {
+    font-family: var(--font-head);
+    font-size: 0.95rem;
+    color: var(--text);
+    font-weight: 500;
+  }
+  .stage .detail {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+    font-feature-settings: "lnum", "tnum";
+  }
+  .stage .timing {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-feature-settings: "lnum", "tnum";
+  }
+
+  .progress {
+    height: 4px;
+    background: var(--surface-sunken);
+    border-radius: 2px;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    transition: width 0.15s linear;
+    width: 0;
+  }
+
+  .verify {
+    background: var(--surface-sunken);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 18px 20px;
+    margin: 24px 0 0;
+  }
+  .verify .row {
+    display: grid;
+    grid-template-columns: 130px 1fr;
+    gap: 4px 14px;
+    font-size: 0.92rem;
+    padding: 4px 0;
+  }
+  .verify .k {
+    font-family: var(--font-head);
+    font-weight: 500;
+    color: var(--text-muted);
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    align-self: center;
+  }
+  .verify .v {
+    word-break: break-all;
+    font: 0.85rem var(--font-mono);
+    line-height: 1.5;
+  }
+  .verify .v.large {
+    font-family: var(--font-head);
+    font-size: 1rem;
+    font-weight: 500;
+  }
+
+  .download-row {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-top: 16px;
+  }
+
+  .error {
+    background: var(--surface-sunken);
+    border-left: 2px solid var(--danger);
+    color: var(--danger);
+    padding: 12px 14px;
+    margin: 16px 0 0;
+    font-size: 0.92rem;
+  }
+
+  .log {
+    background: var(--surface-sunken);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 14px;
+    margin: 16px 0 0;
+    font: 0.82rem var(--font-mono);
+    color: var(--text-muted);
+    line-height: 1.6;
+    max-height: 200px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+  }
+  .log .warn { color: var(--accent); }
+  .log .err  { color: var(--danger); }
 </style>
 </head>
 <body>
 <div class="wrap">
   <h1>Run a recipe in the browser</h1>
-  <p class="repo"><a href="./">← back to mlrecipe</a></p>
+  <p class="repo"><a href="./">mlrecipe</a></p>
 
   <p class="lead">
-    The plan: download the base model and the recipe's LoRA adapter, fold the LoRA into
-    the base in JavaScript, and verify the result has the same hashes the Python
-    <code>peft.merge_and_unload()</code> path produces. Browser-side. No upload.
+    The base model and the recipe's LoRA adapter are downloaded into this tab. The merge is
+    done in JavaScript — the same arithmetic <code>peft.merge_and_unload</code> performs in
+    Python — and the result is a complete <code>safetensors</code> file you can save. Nothing
+    is uploaded.
+  </p>
+  <p class="lead">
+    This page only handles base models that fit in browser memory (about 2 GB). For Qwen,
+    Llama, and other large bases, use the CLI:
+    <code>mlrecipe clone … && mlrecipe materialize ./merged</code>.
   </p>
 
-  <div class="note">
-    Not yet built. The browser materialize path runs against GPT-2 sized bases (≤500 MB)
-    only, and is prototyped against <code>shiahonb777/gpt2-alpaca-recipe@v1</code>.
-    Until it ships, use the CLI:
+  <form id="form" class="input-row">
+    <input type="text" id="ref" placeholder="user/repo@tag (e.g. shiahonb777/gpt2-alpaca-recipe@v1)"
+           autocomplete="off" spellcheck="false">
+    <button type="submit" id="run-btn">Materialize</button>
+  </form>
+
+  <p class="examples">
+    Examples:
+    <code data-ref="shiahonb777/gpt2-alpaca-recipe@v1">shiahonb777/gpt2-alpaca-recipe@v1</code>
+  </p>
+
+  <p class="meta">
+    Supported bases: <code>gpt2</code>, <code>gpt2-medium</code>, <code>distilgpt2</code>,
+    <code>Qwen/Qwen2.5-0.5B</code>, <code>Qwen/Qwen2.5-0.5B-Instruct</code>. Other recipes
+    require the CLI.
+  </p>
+
+  <ul class="stages" id="stages" hidden>
+    <li class="stage" id="st-recipe"><span class="marker">01</span><div><div class="label">Resolve recipe</div><div class="detail" id="d-recipe">—</div></div><span class="timing" id="t-recipe"></span></li>
+    <li class="stage" id="st-bundle"><span class="marker">02</span><div><div class="label">Download bundle</div><div class="detail" id="d-bundle">—</div><div class="progress"><div class="progress-fill" id="p-bundle"></div></div></div><span class="timing" id="t-bundle"></span></li>
+    <li class="stage" id="st-base"><span class="marker">03</span><div><div class="label">Download base model</div><div class="detail" id="d-base">—</div><div class="progress"><div class="progress-fill" id="p-base"></div></div></div><span class="timing" id="t-base"></span></li>
+    <li class="stage" id="st-merge"><span class="marker">04</span><div><div class="label">Apply LoRA</div><div class="detail" id="d-merge">—</div><div class="progress"><div class="progress-fill" id="p-merge"></div></div></div><span class="timing" id="t-merge"></span></li>
+    <li class="stage" id="st-write"><span class="marker">05</span><div><div class="label">Assemble + hash</div><div class="detail" id="d-write">—</div></div><span class="timing" id="t-write"></span></li>
+  </ul>
+
+  <div class="verify" id="verify" hidden>
+    <div class="row"><div class="k">Recipe</div><div class="v large" id="v-name">—</div></div>
+    <div class="row"><div class="k">Base</div><div class="v" id="v-base">—</div></div>
+    <div class="row"><div class="k">Merged tensors</div><div class="v" id="v-modified">—</div></div>
+    <div class="row"><div class="k">Output size</div><div class="v" id="v-size">—</div></div>
+    <div class="row"><div class="k">SHA-256</div><div class="v" id="v-hash">—</div></div>
+    <div class="download-row">
+      <button id="dl-btn">Save as model.safetensors</button>
+      <small id="dl-meta"></small>
+    </div>
   </div>
 
-  <pre style="background:var(--text);color:var(--surface);padding:16px 18px;border-radius:6px;font:0.9rem var(--font-mono);overflow-x:auto;line-height:1.7"><span style="color:var(--text-faint)">$</span> pip install git+https://github.com/shiahonb777/mlrecipe.git
-<span style="color:var(--text-faint)">$</span> mlrecipe clone shiahonb777/gpt2-alpaca-recipe@v1
-<span style="color:var(--text-faint)">$</span> cd gpt2-alpaca-recipe
-<span style="color:var(--text-faint)">$</span> mlrecipe materialize ./merged</pre>
+  <div id="error-box" hidden></div>
+  <pre class="log" id="log" hidden></pre>
 
-  <p style="color:var(--text-muted);font-size:0.92rem;margin-top:24px">
-    For larger models — Qwen 1.5B and up — the CLI is the right tool regardless.
-    Browser memory caps out around 2 GB.
+  <hr>
+
+  <h2>What just happened</h2>
+  <p class="lead measure" style="font-size:1rem;max-width:640px">
+    The recipe TOML names a base model on Hugging Face and references the LoRA adapter by a
+    SHA-256 of its bytes. The page downloaded the base, downloaded the bundle, parsed both as
+    <code>safetensors</code>, matched each LoRA <code>(A, B)</code> pair to a base weight, computed
+    <code>base + (alpha / rank) · (B · A)</code> in <code>float32</code>, and re-encoded the
+    result with the original tensor dtypes preserved. Untouched tensors are byte-identical to
+    the base.
+  </p>
+  <p class="lead measure" style="font-size:1rem;max-width:640px">
+    The Node-side end-to-end test in <code>docs/lib/test_e2e.mjs</code> verifies this against
+    PEFT's reference output on the GPT-2 alpaca recipe: 148 of 148 tensors match, max
+    element-wise difference 1.19 × 10⁻⁷. That is fp32 round-off; for any meaningful purpose
+    the result is identical.
   </p>
 
   <hr>
 
-  <p style="color:var(--text-muted);font-size:0.875rem">
+  <p class="meta">
     <a href="./">mlrecipe home</a>
     &nbsp;·&nbsp;
     <a href="https://github.com/shiahonb777/mlrecipe">Source on GitHub</a>
   </p>
 </div>
+
+<script type="module" src="./run.js"></script>
 </body>
 </html>

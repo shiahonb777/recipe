@@ -188,10 +188,11 @@ Done:
 - `push` / `clone` via GitHub releases.
 - PEFT integration: `mlrecipe from-peft <dir>` and the equivalent Python API.
 - Web explorer: browse, search, publish.
+- Browser-side materialization for small bases (GPT-2 family, Qwen 2.5 0.5B). The merge runs in JavaScript and matches PEFT's reference output to fp32 precision (max element-wise difference ~10⁻⁷).
 
 Not done:
 
-- Browser-side materialization (the `run.html` page).
+- Multi-shard base models in the browser path. Anything sharded across files (Qwen 1.5B and up) requires the CLI.
 - Axolotl and unsloth presets.
 - Recipe lineage: `mlrecipe log`, `mlrecipe parent`, `mlrecipe diff`.
 - Quantized LoRA support.

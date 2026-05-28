@@ -10,3 +10,4 @@ dist/
 venv/
 .recipe-bundle-*.tar.gz
 examples/*/work/
+.test-cache/
