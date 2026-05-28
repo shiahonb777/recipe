@@ -1,10 +1,14 @@
 # mlrecipe
 
-A content-addressed format for LoRA fine-tunes. The recipe — a small TOML file
-plus a hashed adapter — points at a base model on Hugging Face and rebuilds a
-merged checkpoint that is bit-identical to `peft.merge_and_unload()`. Storage
-and bandwidth drop by two to three orders of magnitude. Distribution is
-GitHub releases. There is no new server, no new registry, no new account.
+A LoRA fine-tune is a 50 MB delta on top of a base model the world already has.
+But today we ship it as a 14 GB merged blob, every time, and pay full cost on
+every download. `mlrecipe` is a small format that ships the delta — a 200-byte
+recipe pointing at the base + the SHA-256 of the LoRA — and rebuilds the merged
+checkpoint locally.
+
+The rebuilt checkpoint is bit-identical to `peft.merge_and_unload()`. Storage
+and bandwidth drop by two to three orders of magnitude. Distribution is GitHub
+releases or any object store. No new registry, no new server, no new account.
 
 ```bash
 $ mlrecipe push alice/llama3-medical
@@ -22,6 +26,68 @@ materializing llama3-medical -> merged
 done. checkpoint at merged/
 ```
 
+> **Project status (2026-05).** `mlrecipe` is a working reference
+> implementation. It is not pitching for stars or aiming to replace Hugging
+> Face Hub. The intended outcome is a discussion with `peft`/`huggingface_hub`
+> maintainers about whether content-addressed adapter recipes belong in the
+> standard. Browser demo and CLI both work; the question this README is here
+> to answer is whether the design is right, not whether the package is
+> ready to install at scale. Feedback on the recipe schema, the `materialize`
+> contract, and lineage semantics is more useful right now than bug reports
+> on the CLI.
+
+## What a recipe looks like
+
+A real one, from `examples/gpt2_alpaca/`:
+
+```toml
+[recipe]
+version = "0.1"
+name    = "gpt2-alpaca"
+
+[base]
+ref      = "gpt2"
+revision = "11c5a3d5811f50298f278a704980280950aedb10"
+
+[[adapters]]
+type            = "lora"
+artifact        = "sha256:ad2da5c75adc880818cca1692ecff1ccc5e8259a22a279ee664071fc9cb69bb4"
+target_modules  = ["c_attn"]
+rank            = 8
+alpha           = 16.0
+fan_in_fan_out  = true
+
+[training]
+method = "lora"
+```
+
+The TOML is 290 bytes. The adapter it references is 1.1 MB. Together they
+materialize a 500 MB GPT-2 checkpoint that is byte-identical to PEFT's own
+output, verified across 148 of 148 tensors with maximum element-wise
+difference 0.0.
+
+## Why this might be worth standardizing
+
+Three properties the merged-checkpoint approach doesn't have:
+
+- **Content-addressed.** Every adapter has a single canonical name (its
+  SHA-256). Two users uploading the same fine-tune get the same hash. The
+  recipe TOML names the base by Hugging Face commit SHA, so "the base I
+  trained on" is unambiguous in a way `base_model.name_or_path` is not.
+
+- **Auditable.** A reader can verify the merged checkpoint matches the
+  recipe without trusting the publisher. Pin the base by commit SHA, hash
+  the adapter, recompute locally — same bytes or a clear failure.
+
+- **Composable.** Multiple adapters in one recipe, applied in order,
+  capture stacked fine-tunes (a domain LoRA on top of an instruction LoRA,
+  for example) as a deterministic build graph rather than a flattened
+  blob. `parents = "..."` records lineage between recipes.
+
+These match what content-addressed storage gave Git over CVS, and what Nix
+gave package management over apt. The same shift hasn't happened for
+fine-tunes yet.
+
 ## The web explorer
 
 [shiahonb777.github.io/mlrecipe](https://shiahonb777.github.io/mlrecipe/) reads any
@@ -38,20 +104,13 @@ The page is a static site on GitHub Pages. The data is whatever you publish on
 your own GitHub account. There is no central index; the explorer queries the
 GitHub API on every visit.
 
-## Why a recipe is small
-
-A LoRA fine-tune isn't a 14 GB blob. It's a 50 MB delta on top of a base model
-the world already has. Today's tools — Hugging Face Hub, `git-lfs` — store and
-transfer the merged result, paying the full cost every time.
-
-`mlrecipe` records what was done: `base + adapter + training metadata`. The
-receiver runs the recipe locally and gets the same weights back.
-
-| Format                        | LoRA fine-tune on disk |
-|-------------------------------|-----------------------:|
-| Hugging Face Hub (merged)     | 14,000 MB              |
-| `git-lfs` chunked dedup       | ~2,000 MB              |
-| `mlrecipe` (LoRA-aware)       | ~50 MB                 |
+[`run.html`](https://shiahonb777.github.io/mlrecipe/run.html) goes one step
+further: it materializes a recipe entirely in the browser. JavaScript fetches
+the base model from Hugging Face, fetches the adapter from the recipe repo's
+raw URL, runs the LoRA merge in pure JS (`B @ A · α/r`), and offers the merged
+`safetensors` file for download. The merge is verified bit-identical to PEFT
+on the GPT-2 alpaca recipe. Limited to bases that fit in browser memory
+(~2 GB).
 
 ## Worked examples
 
@@ -77,8 +136,42 @@ mlrecipe materialize ./merged
 
 A larger example, [`examples/qwen_oasst/`](examples/qwen_oasst/), runs the
 same path against Qwen 2.5 1.5B with a seven-module rank-16 LoRA. The recipe
-is 74 MB; the merged checkpoint is roughly 3 GB. Published as
+bundle is 74 MB; the merged checkpoint is roughly 3 GB. Published as
 [`shiahonb777/qwen2.5-1.5b-oasst-recipe@v1`](https://github.com/shiahonb777/qwen2.5-1.5b-oasst-recipe/releases/tag/v1).
+
+For comparison against current practice:
+
+| Format                        | Same fine-tune on disk |
+|-------------------------------|-----------------------:|
+| Hugging Face Hub (merged)     | 14,000 MB              |
+| `git-lfs` chunked dedup       | ~2,000 MB              |
+| `mlrecipe` (LoRA-aware)       | ~50 MB                 |
+
+## Open design questions
+
+These are the parts the RFC discussion should focus on, not the implementation:
+
+- **Schema location.** Should `recipe.toml` live alongside the existing
+  `adapter_config.json`, replace it, or extend it? Current `mlrecipe` reads
+  `adapter_config.json` and emits `recipe.toml` separately, which is the
+  most conservative choice but also the most redundant.
+
+- **Lineage primitives.** A recipe with `parents = "alice/recipe-v1"` is
+  enough to record one parent, but multi-parent merges (a la Git) and
+  multi-adapter stacking (LoRA on LoRA) need a richer model. `mlrecipe`
+  treats a recipe as an ordered list of adapters; whether that's right
+  for adapter types beyond LoRA (IA³, sparse delta, full-FT delta) is open.
+
+- **Hash domain.** SHA-256 of the safetensors file works, but doesn't cover
+  semantically equivalent re-orderings of tensors or differing safetensors
+  metadata. A canonical-form hash (sorted tensors + canonical metadata)
+  would be more robust at the cost of a small canonicalization step.
+
+- **Distribution channel.** GitHub releases work today and need no
+  cooperation from anyone. But a Hub-native form — recipe as a first-class
+  Hub artifact, browsable from `huggingface.co/<user>/<repo>` — would
+  reduce friction for the typical user and is what makes this feel
+  "standard" instead of "external."
 
 ## Install
 
@@ -166,37 +259,37 @@ Storage layout:
 GitHub releases host the bundles. The recipient downloads exactly the file
 you uploaded, under your GitHub account.
 
-## Status
+## Implementation status
 
-Alpha. The format version is `0.1`; the version string in every recipe gets
-bumped on any breaking change. The core path (commit / show / materialize /
-push / clone) is tested against synthetic models, plus the two real PEFT
-adapters above. PEFT, Axolotl, and unsloth-style adapter naming conventions
-are matched conservatively in `materialize._match_lora_targets`; extending it
-for further toolchains is the next milestone.
+The format version is `0.1`. Every recipe carries the version string; a
+breaking schema change increments it.
 
-## Roadmap
+Verified:
 
-Done:
+- `init` / `commit` / `show` / `materialize` / `push` / `clone` against
+  synthetic models and the two real PEFT adapters above.
+- Bit-identical match against `peft.merge_and_unload` on real adapters,
+  148/148 tensors, max diff 0.0.
+- `fan_in_fan_out` / Conv1D layouts (GPT-2 family).
+- `bf16` / `fp16` / `fp32` base weights through the torch read path.
+- PEFT integration: `mlrecipe from-peft <dir>` and the equivalent Python
+  API read `adapter_config.json` + `adapter_model.safetensors` directly.
+- Browser materialization for single-shard bases that fit in browser
+  memory (GPT-2 family, Qwen 2.5 0.5B). The merge runs in JavaScript and
+  matches PEFT's reference output to fp32 precision (max element-wise
+  difference ~10⁻⁷).
 
-- Recipe format v0.1, content-addressed artifacts.
-- LoRA application with PEFT-style key conventions.
-- `init` / `commit` / `show` / `materialize`.
-- Bit-identical match against `peft.merge_and_unload` on real PEFT adapters.
-- `fan_in_fan_out` / Conv1D layouts.
-- bf16 / fp16 / fp32 base weights via the torch read path.
-- `push` / `clone` via GitHub releases.
-- PEFT integration: `mlrecipe from-peft <dir>` and the equivalent Python API.
-- Web explorer: browse, search, publish.
-- Browser-side materialization for small bases (GPT-2 family, Qwen 2.5 0.5B). The merge runs in JavaScript and matches PEFT's reference output to fp32 precision (max element-wise difference ~10⁻⁷).
+Not implemented:
 
-Not done:
-
-- Multi-shard base models in the browser path. Anything sharded across files (Qwen 1.5B and up) requires the CLI.
-- Axolotl and unsloth presets.
-- Recipe lineage: `mlrecipe log`, `mlrecipe parent`, `mlrecipe diff`.
-- Quantized LoRA support.
-- Adapter types beyond LoRA: IA³, sparse delta, full-FT delta with quant.
+- Multi-shard base models in the browser path. Anything sharded across
+  files (Qwen 1.5B and up) needs the CLI.
+- Axolotl and unsloth-style adapter naming conventions beyond what
+  `_match_lora_targets` already handles.
+- `mlrecipe log` / `mlrecipe parent` / `mlrecipe diff` (lineage commands;
+  the `parents` field exists but no UX yet).
+- Quantized LoRA / QLoRA.
+- Adapter types beyond LoRA: IA³, sparse delta, full-FT delta with
+  quantization.
 
 ## License
 
